@@ -51,6 +51,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         if 23 < since_last_edge_ms && since_last_edge_ms < 26 {
             // a watt-hour pulse should be ~25 ms
             let since_last_pulse_ms =  t2.duration_since(t_last_pulse)?.as_millis();
+            if (since_last_pulse_ms < 100) {
+                println!("A pulse arrived less than 100 ms after the previous one.  This would be a 300 A spike, which must be spurious. Skipping.");
+                continue;
+            }
             let since_last_pulse_watts = 3600000. / since_last_pulse_ms as f32;
             if level == gpio::Level::High {
                 // rising
