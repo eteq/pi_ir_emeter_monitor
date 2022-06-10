@@ -1,0 +1,16 @@
+[package]
+name = "pi_ir_pulse_monitor"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "gpio_writer"
+path = "src/writer.rs"
+
+[[bin]]
+name = "edge_printer"
+path = "src/edge.rs"
+
+[dependencies]
+rppal = "0.13.1"
+rusqlite = { version = "0.27.0", features = ["bundled"] }
