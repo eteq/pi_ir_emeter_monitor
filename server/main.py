@@ -8,6 +8,7 @@ import bokeh.embed
 import bokeh.resources
 import bokeh.layouts
 import bokeh.plotting
+import bokeh.models
 
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -46,8 +47,16 @@ def get_bokeh_html(samples, cumulative_plot=True, mean_plot=True):
         fig = bokeh.plotting.figure(**figkwargs)
 
         dns = np.diff(samples)
-        dts = ((samples[1:] + samples[:-1]) / 2).astype('datetime64[ns]')
-        fig.circle(x=dts, y=3.6e9/dns)
+        ts = ((samples[1:] + samples[:-1]) / 2).astype('datetime64[ns]')
+        kw = 3.6e9/dns
+        fig.circle(x=ts, y=kw)
+
+        avg_kw = np.average(kw, weights=samples[1:] - samples[:-1])
+
+        average_span = bokeh.models.Span(location=avg_kw,
+                              dimension='width', line_color='#E30B5C',
+                              line_dash='dashed', line_width=2)
+        fig.add_layout(average_span)
 
         fig.xaxis.axis_label = 'Time'
         fig.yaxis.axis_label = 'Mean kw during 1 wh'
@@ -83,7 +92,7 @@ async def index(minutes_last: float = 60*24):
         moneyinfo = ''
     else:
         dollars = latest_kwh * settings.dollars_per_kwh
-        moneyinfo = f' which is ${dollars:.2f} over an hour or ${dollars*24.:.2f} over a day'
+        moneyinfo = f' which is ${dollars:.2f} over an hour or ${dollars*24.:.2f} over a day or ${dollars*730.5:.2f} over a month'
 
     return f"""
     <html>
