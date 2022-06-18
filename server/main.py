@@ -15,6 +15,7 @@ from pydantic import BaseSettings, FilePath
 
 class Settings(BaseSettings):
     pi_ir_db_path: FilePath = '../power_mon.sqlite3'
+    dollars_per_kwh: float = 0 # 0 means don't show the cost info
 
 
 settings = Settings()
@@ -78,6 +79,12 @@ async def index(minutes_last: float = 60*24):
     bokeh_cdn = bokeh.resources.CDN.render()
     plot_script, plot_div = get_bokeh_html(samples, True, True)
 
+    if settings.dollars_per_kwh == 0:
+        moneyinfo = ''
+    else:
+        dollars = latest_kwh * settings.dollars_per_kwh
+        moneyinfo = f' which is ${dollars:.2f} over an hour or ${dollars*24.:.2f} over a day'
+
     return f"""
     <html>
         <head>
@@ -88,7 +95,7 @@ async def index(minutes_last: float = 60*24):
         </head>
         <body>
             <h1>Latest Value</h1>
-            {latest_kwh} kwh
+            {latest_kwh:.3f} kw{moneyinfo}
 
             <h1>History</h1>
             {plot_div}
