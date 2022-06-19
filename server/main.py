@@ -155,7 +155,7 @@ async def kw_time_smoothed(minutes_last: float = 1):
         # always need at least two samples
         if len(samples) < 2:
 
-            cur.execute('select tstampunixns from wh_pulses order by tstampunixns DESC LIMIT 2')
+            cur.execute('select tstampunixns from wh_pulses order by tstampunixns ASC LIMIT 2')
             samples = np.array(cur.fetchall()).ravel()
 
         dns = np.diff(samples)
