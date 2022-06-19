@@ -162,3 +162,21 @@ async def kwh_time_smoothed(minutes_last: float = 1):
         return {'value': np.mean(3.6e9/dns), 'nsamples':len(samples), 'minutes_span':(samples[-1] - samples[0])/6.e10}
     finally:
         con.close()
+
+
+
+@app.get("/kwh_since")
+async def kwh_since(minutes_back: float = 60):
+    currtime_ns = time.time()*1e9
+    backtime_ns = currtime_ns - minutes_back*6.e10
+
+    con = get_connection()
+    try:
+        cur = con.execute(f'select count(tstampunixns) from wh_pulses where tstampunixns > {backtime_ns}')
+        count = cur.fetchone()[0]
+
+        return {'value': count/1000, 'nsamples':count}
+
+    finally:
+        con.close()
+
