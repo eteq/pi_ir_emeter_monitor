@@ -49,7 +49,7 @@ async def async_setup_platform(
 
 
 class PiIREmeterSensor(SensorEntity):
-    def __init__(self, session, hostname, endpoint):
+    def __init__(self, session, hostname):
         super().__init__()
         self.session = session
         self.hostname = hostname
@@ -65,11 +65,11 @@ class PiIREmeterSensor(SensorEntity):
 
     @property
     def url(self):
-        return self.hostname + '/' + self.endpoint
+        return 'http://' + self.hostname + '/' + self.endpoint
 
     async def async_update(self):
         try:
-            async with session.get(self.url) as resp:
+            async with self.session.get(self.url) as resp:
                 if resp.status == 200:
                     j = await resp.json()
                     self._attr_native_value = j['value']
