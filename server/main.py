@@ -151,6 +151,13 @@ async def kwh_time_smoothed(minutes_last: float = 1):
         cur.execute(f'select tstampunixns from wh_pulses where tstampunixns > {backtime_ns} order by tstampunixns ASC')
 
         samples = np.array(cur.fetchall()).ravel()
+
+        # always need at least two samples
+        if len(samples) < 2:
+
+            cur.execute('select tstampunixns from wh_pulses order by tstampunixns DESC LIMIT 2')
+            samples = np.array(cur.fetchall()).ravel()
+
         dns = np.diff(samples)
         return {'value': np.mean(3.6e9/dns), 'nsamples':len(samples), 'minutes_span':(samples[-1] - samples[0])/6.e10}
     finally:
