@@ -1,0 +1,10 @@
+{
+  "domain": "pi_ir_emeter_mon",
+  "name": "Raspberry Pi Ir Electricity Meter Monitor",
+  "documentation": "https://github.com/eteq/pi_ir_emeter_monitor/home_assistant_integration",
+  "dependencies": [],
+  "codeowners": ["@eteq"],
+  "requirements": [],
+  "iot_class": "local_polling",
+  "version": "0.1.0"
+}
