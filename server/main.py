@@ -114,7 +114,7 @@ async def index(minutes_last: float = 60*24):
 
 
 @app.get("/kw")
-async def kwh():
+async def kw():
     con = get_connection()
     try:
         cur = con.cursor()
@@ -127,7 +127,7 @@ async def kwh():
 
 
 @app.get("/kw_smoothed")
-async def kwh_smoothed(nsamples: int = 10):
+async def kw_smoothed(nsamples: int = 10):
     con = get_connection()
     try:
         cur = con.cursor()
@@ -141,7 +141,7 @@ async def kwh_smoothed(nsamples: int = 10):
 
 
 @app.get("/kw_time_smoothed")
-async def kwh_time_smoothed(minutes_last: float = 1):
+async def kw_time_smoothed(minutes_last: float = 1):
     con = get_connection()
     try:
         cur = con.cursor()
