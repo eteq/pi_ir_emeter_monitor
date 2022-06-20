@@ -1,6 +1,8 @@
 import os
 import time
 import sqlite3
+import zoneinfo
+from datetime import datetime
 
 import numpy as np
 
@@ -29,10 +31,12 @@ def get_connection():
 def get_bokeh_html(samples, cumulative_plot=True, mean_plot=True):
     figs = []
 
+    utcoffset = np.timedelta64(get_system_zoneinfo().utcoffset(datetime.now()))
+
     if cumulative_plot:
         fig = bokeh.plotting.figure(x_axis_type="datetime", width=800, height=500)
 
-        fig.circle(x=samples.astype('datetime64[ns]'),
+        fig.circle(x=samples.astype('datetime64[ns]') + utcoffset,
                    y=np.arange(len(samples))/1000)
 
         fig.xaxis.axis_label = 'Time'
@@ -46,10 +50,11 @@ def get_bokeh_html(samples, cumulative_plot=True, mean_plot=True):
             figkwargs['x_range'] = figs[-1].x_range
         fig = bokeh.plotting.figure(**figkwargs)
 
+
         dns = np.diff(samples)
         ts = ((samples[1:] + samples[:-1]) / 2).astype('datetime64[ns]')
         kw = 3.6e9/dns
-        fig.circle(x=ts, y=kw)
+        fig.circle(x=ts + utcoffset, y=kw)
 
         avg_kw = np.average(kw, weights=samples[1:] - samples[:-1])
 
@@ -65,7 +70,11 @@ def get_bokeh_html(samples, cumulative_plot=True, mean_plot=True):
 
     plot = bokeh.layouts.column(*figs)
 
-    return  bokeh.embed.components(plot)
+    return  bokeh.embed.components(plot), avg_kw
+
+def get_system_zoneinfo():
+    with open('/etc/timezone') as f:
+        return zoneinfo.ZoneInfo(f.read().strip())
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -83,16 +92,17 @@ async def index(minutes_last: float = 60*24):
     finally:
         con.close()
 
-    latest_kwh = 3.6e9/(samples[-1] - samples[-2])
+    latest_kw = 3.6e9/(samples[-1] - samples[-2])
 
     bokeh_cdn = bokeh.resources.CDN.render()
-    plot_script, plot_div = get_bokeh_html(samples, True, True)
+    (plot_script, plot_div), avg_kw = get_bokeh_html(samples, True, True)
 
     if settings.dollars_per_kwh == 0:
-        moneyinfo = ''
+        moneyinfo = lambda kw: ''
     else:
-        dollars = latest_kwh * settings.dollars_per_kwh
-        moneyinfo = f' which is ${dollars:.2f} over an hour or ${dollars*24.:.2f} over a day or ${dollars*730.5:.2f} over a month'
+        def moneyinfo(kw):
+            dollars = kw * settings.dollars_per_kwh
+            return f' which is ${dollars:.2f} over an hour or ${dollars*24.:.2f} over a day or ${dollars*730.5:.2f} over a month'
 
     return f"""
     <html>
@@ -103,11 +113,13 @@ async def index(minutes_last: float = 60*24):
             {plot_script}
         </head>
         <body>
-            <h1>Latest Value</h1>
-            {latest_kwh:.3f} kw{moneyinfo}
+            <h1>Latest Power Usage</h1>
+            {latest_kw:.3f} kw{moneyinfo(latest_kw)}
 
             <h1>History</h1>
             {plot_div}
+            <h3> Average Power Usage</h3>
+            {avg_kw:.3f} kw{moneyinfo(avg_kw)}
         </body>
     </html>
     """
