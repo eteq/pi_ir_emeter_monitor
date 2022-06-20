@@ -14,7 +14,7 @@ from homeassistant.helpers.typing import (
     HomeAssistantType,
 )
 
-from homeassistant.const import CONF_HOST, POWER_KILO_WATT, ENERGY_KILO_WATT_HOUR
+from homeassistant.const import CONF_HOST, POWER_KILO_WATT, ENERGY_KILO_WATT_HOUR, CURRENCY_DOLLAR
 
 from .const import DOMAIN
 
@@ -43,7 +43,9 @@ async def async_setup_platform(
 
     hostname = config[CONF_HOST]
 
-    sensors = [PiIREmeterSensorKw(session, hostname), PiIREmeterSensorKwh(session, hostname, 60*24)]
+    sensors = [PiIREmeterSensorKw(session, hostname),
+               PiIREmeterSensorKwh(session, hostname, 'day'),
+               PiIREmeterSensorKwh(session, hostname, 'month')]
 
     async_add_entities(sensors, update_before_add=True)
 
@@ -100,6 +102,21 @@ class PiIREmeterSensorKwh(PiIREmeterSensorBase):
         self.endpoint = 'kwh_since'
         self.minutes_back = minutes_back
 
+
+    @property
+    def name(self):
+        snm = super().name
+        if isinstance(self.minutes_back, str):
+            return snm + self.minutes_back
+        else:
+            return snm
+
     @property
     def params_get(self):
-        return {'minutes_back': self.minutes_back}
+        minback = self.minutes_back
+        if minback == 'day':
+            minback = 60*24
+        elif minback == 'month':
+            minback = 60*24*365.25/12
+
+        return {'minutes_back': minback}
