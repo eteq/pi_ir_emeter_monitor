@@ -107,7 +107,7 @@ class PiIREmeterSensorKwh(PiIREmeterSensorBase):
     def name(self):
         snm = super().name
         if isinstance(self.minutes_back, str):
-            return snm + self.minutes_back
+            return snm + ' ' + self.minutes_back
         else:
             return snm
 
